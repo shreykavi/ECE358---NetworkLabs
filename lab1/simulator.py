@@ -3,7 +3,7 @@ import random_variable as rv
 queue = []
 
 def generate_events(experiment_time):
-    arrivals = rv.exponential(75)
+    arrivals = rv.exponential(75, 1000)
     print arrivals
     #get rand nums using time, would be 0 to time 
 
