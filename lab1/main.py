@@ -1,4 +1,4 @@
 import simulator
 
 if __name__ == "__main__":
-    simulator.generate_events(1000, 2000)
+    print(simulator.generate_events(10, 2000, 500, 0.5))
