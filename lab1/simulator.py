@@ -50,21 +50,21 @@ def generate_events(T, L, C, rho):
         rho: Traffic intensity value
     """
     lam = rho*C/L
-    arrivals = [rv.exponential(lam)]
-    l = rv.exponential(1/L)
+    arrivals = [rv.exponential(1/lam)]
+    l = rv.exponential(L)
     departures = [arrivals[0] + l/C]
     while arrivals[-1] < T:
-        a = rv.exponential(lam)
-        l = rv.exponential(1/L)
+        a = arrivals[-1] + rv.exponential(1/lam)
+        l = rv.exponential(L)
         s = l/C
         arrivals.append(a)
         if a < departures[-1]:
             departures.append(departures[-1]+s)
         else:
             departures.append(a+s)
-    observers = [rv.exponential(lam*5)]
+    observers = [rv.exponential(1/(lam*5))]
     while observers[-1] < T:
-        observers.append(observers[-1]+rv.exponential(lam*5))
+        observers.append(observers[-1]+rv.exponential(1/(lam*5)))
     arrivals = [DESEvent(e_type="arrival", e_time=a) for a in arrivals[:-1]]
     departures = [DESEvent(e_type="departure", e_time=d) for d in departures[:-1]]
     observers = [DESEvent(e_type="observer", e_time=o) for o in observers[:-1]]
@@ -97,4 +97,5 @@ def DES_Simulator(events): #m/m/1
             observer_records.append(
                 ObserverRecord(E_N=avg_queuesize_sum/No, P_idle=idle_count/No)
             )
+    print("Na={}, Nd={}, No={}".format(Na, Nd, No))
     return observer_records

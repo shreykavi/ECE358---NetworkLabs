@@ -7,16 +7,16 @@ import time
 
 def main(args):
     T, L, C = (
-        100,
+        1,
         2000,
-        1
+        1000000
     )
     E_N = []
     P_idle = []
-    rhos = np.arange(0.25, 0.35, 0.1)
+    rhos = np.arange(0.25, 0.65, 0.1)
     for i, rho in enumerate(rhos):
         t0 = time.time()
-        event_queue = simulator.generate_events(T, 1/L, C, rho)
+        event_queue = simulator.generate_events(T, L, C, rho)
         observer_records = simulator.DES_Simulator(event_queue)
         E_N.append(observer_records[-1].E_N)
         P_idle.append(observer_records[-1].P_idle)
