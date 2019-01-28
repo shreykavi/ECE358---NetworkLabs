@@ -58,7 +58,6 @@ def generate_events(T, L, C, rho):
         l = rv.exponential(1/L)
         s = l/C
         arrivals.append(a)
-        lengths.append(l)
         if a < departures[-1]:
             departures.append(departures[-1]+s)
         else:
@@ -81,24 +80,21 @@ def DES_Simulator(events): #m/m/1
     """
     observer_records = []
     Na, Nd, No = (0, 0, 0)
-    prev_t = 0
-    idle_time = 0
+    idle_count = 0
+    avg_queuesize_sum = 0
     for e in events:
         # Conditional block to update Na and Nd
         if e.type == "arrival":
             Na += 1
         elif e.type == "departure":
             Nd += 1
-        # Recalculate propagating data
-        buffer_size = Na - Nd
-        idle_time += (e.time - prev_t)*int(bool(Na-Nd))
-        prev_t = e.time
         # If observer event record data and add to list
         if e.type == "observer":
             No += 1
+            queue_size = (Na - Nd)
+            idle_count += 1 if not queue_size else 0
+            avg_queuesize_sum += queue_size
             observer_records.append(
-                ObserverRecord(E_N=(buffer_size/e.time), P_idle=(idle_time/e.time))
+                ObserverRecord(E_N=avg_queuesize_sum/No, P_idle=idle_count/No)
             )
     return observer_records
-    
-    
