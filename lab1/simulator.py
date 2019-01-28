@@ -2,26 +2,57 @@ from __future__ import division
 import random_variable as rv
 import numpy as np
 
-class Event:
-    def __init__(self, arrival, length, service):
-        self.arrival = arrival
-        self.length = length
-        self.service = service
+class DESEvent:
+    """
+    Class for classifying DES events
+    class members:
+        type: The type of event (arrival, departure, or observer).
+        time: The time at which the event occurs.
+    """
+    def __init__(self, e_type, e_time):
+        self.type = e_type
+        self.time = e_time
 
     def __repr__(self):
-        return "(a: {}, l: {}, s: {})".format(self.arrival, self.length, self.service)
+        return """
+{{
+    DESEvent.type: {},
+    DESEvent.time: {}
+}}
+""".format(self.type, self.time)
 
-class QueueEvent:
-    def __init__(self, event_type, time):
-        self.event_type = event_type
-        self.time = time
+class ObserverRecord:
+    """
+    Class for recording data at observer events
+    class members:
+        E_N: The time-average number of packets in the buffer E[N].
+        P_idle: The proportion of time the server is idle.
+    """
+    def __init__(self, E_N, P_idle):
+        self.E_N = E_N
+        self.P_idle = P_idle
+    
+    def __repr__(self):
+        return """
+{{
+    E_N: {},
+    P_idle: {}
+}}
+""".format(self.E_N, self.P_idle)
 
 def generate_events(T, L, C, rho):
+    """
+    Generate Events for DES
+    params:
+        T: Time period for simluation
+        L: Average package length in bits
+        C: Service rate
+        rho: Traffic intensity value
+    """
     lam = rho*C/L
     arrivals = [rv.exponential(lam)]
-    lengths = [rv.exponential(1/L)]
-    departures = [arrivals[0] + lengths[0]/C]
-    
+    l = rv.exponential(1/L)
+    departures = [arrivals[0] + l/C]
     while arrivals[-1] < T:
         a = rv.exponential(lam)
         l = rv.exponential(1/L)
@@ -35,36 +66,39 @@ def generate_events(T, L, C, rho):
     observers = [rv.exponential(lam*5)]
     while observers[-1] < T:
         observers.append(observers[-1]+rv.exponential(lam*5))
-
-    arrivals = [dict(type="arrival", time=a) for a in arrivals]
-    departures = [dict(type="departure", time=d) for d in departures]
-    observers = [dict(type="observer", time=o) for o in observers]
-
+    arrivals = [DESEvent(e_type="arrival", e_time=a) for a in arrivals[:-1]]
+    departures = [DESEvent(e_type="departure", e_time=d) for d in departures[:-1]]
+    observers = [DESEvent(e_type="observer", e_time=o) for o in observers[:-1]]
     events = arrivals+departures+observers
-    return sorted(events, key=lambda x: x["time"])
-
-
-    
+    return sorted(events, key=lambda x: x.time)
 
 def DES_Simulator(events): #m/m/1
     """
     Discrete Event Simulator
     Iterate through events are calculate stats
     params:
-        events: list of events
+        events: Sorted list of DESEvent objects to iterate over.
     """
-    buffer_size = 0
     observer_records = []
-
+    Na, Nd, No = (0, 0, 0)
+    prev_t = 0
+    idle_time = 0
     for e in events:
-        if e["type"] == "arrival":
-            # TODO logic for arrival event
-            pass
-        elif e["type"] == "departure":
-            # TODO logic for departure event
-            pass
-        elif e["type"] == "observer":
-            # TODO logic for observer event
-            pass
-        
+        # Conditional block to update Na and Nd
+        if e.type == "arrival":
+            Na += 1
+        elif e.type == "departure":
+            Nd += 1
+        # Recalculate propagating data
+        buffer_size = Na - Nd
+        idle_time += (e.time - prev_t)*int(bool(Na-Nd))
+        prev_t = e.time
+        # If observer event record data and add to list
+        if e.type == "observer":
+            No += 1
+            observer_records.append(
+                ObserverRecord(E_N=(buffer_size/e.time), P_idle=(idle_time/e.time))
+            )
+    return observer_records
+    
     
