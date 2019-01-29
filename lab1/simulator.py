@@ -95,7 +95,7 @@ def DES_Simulator(events, L, C, K): #M/M/1/K
             Na += 1
             package_length = rv.exponential(L)
             service_time = package_length/C
-            if len(buffer) < K:    
+            if len(buffer) < K:
                 if buffer:
                     next_departure = buffer[-1]
                     dept_time = next_departure.time+service_time
