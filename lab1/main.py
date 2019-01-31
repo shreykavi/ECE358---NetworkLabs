@@ -2,11 +2,18 @@ from __future__ import division
 import simulator
 import sys
 
-def main(args):
+def main(k_values):
+    """
+    Main program for lab 1.
+    Runs simulation for different values of L, C, rho, and K
+    Repeats simulation for incrementing T values until error is <= 5%
+    parameters:
+        k_values: List of values of K to simulate with. If empty list, simulate K=infinity (M/M/1)
+    """
     L = 2000
     C = 1000000
     rho_list = [i*0.1 for i in range(5, 16)]
-    K_lst = [int(i) for i in args] if args else [float('inf')]
+    K_lst = [int(i) for i in k_values] if k_values else [float('inf')]
     E_N = 0
     P_idle = 0
     P_loss = 0

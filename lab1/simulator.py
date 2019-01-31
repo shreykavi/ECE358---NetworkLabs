@@ -73,7 +73,7 @@ def DES_Simulator(events, L, C, K=float('inf')): #M/M/1/K
         events: Sorted list of DESEvent objects to iterate over.
         L: Average package length (bits)
         C: Output link rate (bps)
-        K: Max buffer size
+        K: Max buffer size. Default value is infinity
     """
     buffer = []
     observer_records = []
