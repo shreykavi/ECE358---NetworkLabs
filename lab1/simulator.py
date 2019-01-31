@@ -65,7 +65,7 @@ def generate_events(T, L, C, rho):
     events = arrivals+observers
     return sorted(events, key=lambda x: x.time)
 
-def DES_Simulator(events, L, C, K): #M/M/1/K
+def DES_Simulator(events, L, C, K=float('inf')): #M/M/1/K
     """
     Discrete Event Simulator
     Iterate through events are calculate stats
@@ -106,8 +106,7 @@ def DES_Simulator(events, L, C, K): #M/M/1/K
                 num_packet_loss += 1
         elif e.type == "departure":
             Nd += 1
-        # If observer event record data and add to list
-        if e.type == "observer":
+        elif e.type == "observer":
             No += 1
             queue_size = len(buffer)
             idle_count += 1 if not queue_size else 0
