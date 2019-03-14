@@ -1,0 +1,1 @@
+1) if node A sends at ta, and another packet arrives from node A at time ta1 where ta1 - ta < transmission time, is this a collision or busy or none??
