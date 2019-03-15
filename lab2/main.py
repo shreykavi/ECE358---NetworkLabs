@@ -155,10 +155,8 @@ def main():
         return None
     persistent = bool(int(sys.argv[1]))
     if persistent:
-        title = "CSMA/CD Persistent Throughput"
         print("Simulating Persistent CSMA/CD")
     else:
-        title = "CSMA/CD Non-Persistent Throughput"
         print("Simulating Non-Persistent CSMA/CD")
     for A in [7, 10, 20]:
         results = []
@@ -175,7 +173,7 @@ def main():
                 Kmax = 10
             )
             res = CSMACD_simulation(**parameters)
-            results.append(res["successful"]*parameters['L']/1000000/parameters['T'])
+            results.append(res)
             print("Finished simulation for A={}, N={}".format(parameters['A'], parameters['N']))
 
 if __name__ == "__main__":
