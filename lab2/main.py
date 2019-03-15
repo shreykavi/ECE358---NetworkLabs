@@ -22,11 +22,39 @@ def exponential(beta, size=1):
     return collection
 
 def CSMACD_simulation(persistent, N, A, R, L, D, S, Kmax, T):
+    """
+    Function for simulating a CSMA/CD network.
+    parameters:
+        persistent (bool): If true, simulate a persistent CMSA/CD. Else simulate non-persistent
+        N (int): The number of nodes to use for simulation.
+        A (int): The packet arrival rate for all nodes.
+        R (int): The transmission speed of the network.
+        L (int): The fixed length of a packet.
+        D (int): The distance between adjacent nodes in the network.
+        S (int): The propagation speed of the channel
+    returns:
+        Dictionary with keys:
+            successful: The number of successfully transmitted packets in the simulation.
+            total: The total number of attempts to transmit packets in the simulation.
+    """
     def exponential_backoff(i):
+        """
+        Function for calculating wait time in exponential backoff
+        parameters:
+            i: seed for generating a random number r between 0 and (2^i)-1
+        returns:
+            int: r*512/R where R is the transmission speed
+        """
         r = randint(0, (2**i)-1)
         return r*(512/R)
 
     def update_queue(q, t):
+        """
+        Function to update packet arrival times in a queue.
+        parameters: 
+            q (list): Queue of packet arrival times
+            t (float): Time to update any packets that arrive before.
+        """
         i = 0
         q_length = len(q)
         while i < q_length and q[i] < t:
@@ -34,6 +62,17 @@ def CSMACD_simulation(persistent, N, A, R, L, D, S, Kmax, T):
             i += 1
 
     def get_collision_time(node1, node2, t1, t2):
+        """
+        Function for calculating the time for when packets from two nodes will collide.
+        Assumptions are that the nodes' packets will collide, and t1 < t2
+        parameters:
+            node1 (int): Index of one of the nodes
+            node2 (int): Index of the other node
+            t1 (float): Time of node1's packet arrival
+            t1 (float): Time of node2's packet arrival
+        returns:
+            (float): t2 + calculated collision time
+        """
         distance = abs(node1-node2)*D
         collision_time = (distance - (t2-t1)*S)/2/S
         return t2 + collision_time
@@ -47,7 +86,6 @@ def CSMACD_simulation(persistent, N, A, R, L, D, S, Kmax, T):
         queues[i] = [exponential(1/A)]
         while queues[i][-1] < T:
             queues[i].append(queues[i][-1] + exponential(1/A))
-    # print([len(queues[i]) for i in queues])
     collision_counts = {i: 0 for i in range(N)}
     busy_counts = {i: 0 for i in range(N)}
     # Simulate
@@ -59,7 +97,6 @@ def CSMACD_simulation(persistent, N, A, R, L, D, S, Kmax, T):
         next_packets = {i: queues[i][0] for i in queues if i != first_node}
         collisions = [i for i in next_packets if next_packets[i] <= propagation_times[i]]
         if collisions:
-            # print("COLLISION DETECTED")
             collision_times = [get_collision_time(first_node, i, first_arrival, next_packets[i]) for i in collisions]
             first_collision = min(collision_times)
 
@@ -73,12 +110,12 @@ def CSMACD_simulation(persistent, N, A, R, L, D, S, Kmax, T):
                 else:
                     t_wait = exponential_backoff(collision_counts[n])
                     new_time = first_collision + t_wait
-                    update_queue(queues[n], new_time)
+                    if new_time < T:
+                        update_queue(queues[n], new_time)
                 if not queues[n]:
                     del queues[n]
-        # Condition block for busy
+        # Condition block for successful transmission
         else:
-            # print("SUCCESSFUL TRANSMISSION")
             busy_packets = [i for i in next_packets if propagation_times[i] < next_packets[i] < propagation_times[i] + transmission_time]
             for i in busy_packets:
                 if persistent:
@@ -89,9 +126,10 @@ def CSMACD_simulation(persistent, N, A, R, L, D, S, Kmax, T):
                         if not queues[i]:
                             del queues[i]
                         continue                        
-                t_wait = propagation_times[i] + transmission_time if persistent else exponential_backoff(busy_counts[i]) # make exponential backoff for non persistent
+                t_wait = propagation_times[i] + transmission_time if persistent else exponential_backoff(busy_counts[i])
                 new_time = t_wait
-                update_queue(queues[i], new_time)
+                if new_time < T:
+                    update_queue(queues[i], new_time)
             successful_transmit_counter += 1
             collision_counts[first_node] = 0
             queues[first_node].pop(0)
@@ -104,6 +142,17 @@ def CSMACD_simulation(persistent, N, A, R, L, D, S, Kmax, T):
     }
 
 def main():
+    """
+    Main function to call when script is run
+    returns:
+        None if console argument of persistence is not specified
+        results (list): A list of results that contains the information returned from calling CSMACD_simulation for the range of parameters
+        specified in the lab manual.
+    """
+    if len(sys.argv) != 2:
+        print("Usage: python main.py <persistent>")
+        print("    persistent: 1 for CSMA/CD persistent simulation. 0 for non-persistent.")
+        return None
     persistent = bool(int(sys.argv[1]))
     if persistent:
         title = "CSMA/CD Persistent Throughput"
@@ -111,10 +160,8 @@ def main():
     else:
         title = "CSMA/CD Non-Persistent Throughput"
         print("Simulating Non-Persistent CSMA/CD")
-
-    # Parameters for simulation
     for A in [7, 10, 20]:
-        throughput = []
+        results = []
         for N in range(20, 120, 20):    
             parameters = dict(
                 persistent = persistent,
@@ -128,14 +175,8 @@ def main():
                 Kmax = 10
             )
             res = CSMACD_simulation(**parameters)
-            throughput.append(res["successful"]*parameters['L']/1000000/parameters['T'])
-            print("Finished test for A={}, N={}".format(parameters['A'], parameters['N']))
-        plt.plot(range(20, 120, 20), throughput, label="A={}".format(A))
-    plt.title(title)
-    plt.xlabel("Number of Nodes")
-    plt.ylabel("Efficiency")
-    plt.legend(loc="best")
-    plt.show()
+            results.append(res["successful"]*parameters['L']/1000000/parameters['T'])
+            print("Finished simulation for A={}, N={}".format(parameters['A'], parameters['N']))
 
 if __name__ == "__main__":
     main()
